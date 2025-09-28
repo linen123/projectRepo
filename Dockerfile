@@ -7,7 +7,7 @@ WORKDIR /app
 # Step 3: Copy the Spring Boot JAR file into the container
 # Assuming your Spring Boot application's JAR file is named 'my-spring-boot-app.jar'
 # and is located in the 'target/' directory after a Maven/Gradle build.
-COPY target/my-spring-boot-app.jar /app/my-spring-boot-app.jar
+COPY --from=build /app/build/libs/demo-0.0.1-SNAPSHOT.jar /app/my-spring-boot-app.jar
 
 # Step 4: Expose the port your application runs on
 # Spring Boot applications typically run on port 8080 by default.
