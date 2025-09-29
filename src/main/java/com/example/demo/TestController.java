@@ -14,6 +14,12 @@ public class TestController {
     @Autowired
     StudentService studentService;
 
+    @GetMapping("/test")
+    public String testAPI(){
+
+        return "Hello Service is Up & Running";
+    }
+
     @PostMapping("/add/")
     public void addStudent(Student student){
 
