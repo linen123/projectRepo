@@ -1,17 +1,36 @@
-# Step 1: Use an official OpenJDK base image
-FROM openjdk:17-jdk-alpine
+# Stage 1: Build the application using Gradle
+FROM gradle:jdk17-alpine AS builder
 
-# Step 2: Set the working directory inside the container
 WORKDIR /app
 
-# Step 3: Copy the Spring Boot JAR file into the container
-# Assuming your Spring Boot application's JAR file is named 'my-spring-boot-app.jar'
-# and is located in the 'target/' directory after a Maven/Gradle build.
-COPY --from=build /app/build/libs/demo-0.0.1-SNAPSHOT.jar /app/my-spring-boot-app.jar
+# Copy only the build files first to leverage Docker cache
+COPY build.gradle settings.gradle /app/
+COPY gradle /app/gradle
+COPY gradlew /app/
 
-# Step 4: Expose the port your application runs on
-# Spring Boot applications typically run on port 8080 by default.
+# Copy the source code
+COPY src /app/src
+
+# Make gradlew executable
+RUN chmod +x gradlew
+
+# Build the application
+RUN ./gradlew bootJar
+
+# Stage 2: Create the final runtime image
+FROM openjdk:17-jdk-slim
+
+WORKDIR /app
+
+# Create a non-root user to run the application securely
+RUN addgroup --system spring && adduser --system --ingroup spring spring
+USER spring:spring
+
+# Copy the built JAR from the builder stage
+COPY --from=builder /app/build/libs/*.jar app.jar
+
+# Expose the port your Spring Boot application listens on (e.g., 8080)
 EXPOSE 8080
 
-# Step 5: Define the command to run your Spring Boot application
-CMD ["java", "-jar", "/app/my-spring-boot-app.jar"]
+# Define the entry point to run the application
+ENTRYPOINT ["java", "-jar", "app.jar"]
